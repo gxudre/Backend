@@ -1,41 +1,42 @@
 const conectarDb = require('./database');
 
 class Contato {
-    constructor(){
+    constructor(nome, email, telefone){
         this.id = null
-        this.nome = new nome();
-        this.email = new email();
-        this.telefone = new telefone();
+        this.nome = nome;
+        this.email = email;
+        this.telefone = telefone;
     }
 }
 
-const inserir = async (contato) =>{
+const inserir = async (contato) => {
+    const {nome, email, telefone} = contato;
     const db = await conectarDb();
-    const collection = await db.collection('contatos');
-    let result = await collection.insertOne({contato.nome, contato.email, contato.telefone});
-    contato.id = result.insertedId;
+    const collection = db.collection('contatos');
+    const {insertedId} = await collection.insertOne({nome, email, telefone});
+    return insertedId;
 }
 
 const alterar = async (contato) => {
+    const {id, nome, email, telefone} = contato;
     const db = await conectarDb();
-    const collection = await db.collection('contatos');
-    collection.updateOne( { _id: contato.id} , { $set: { nome: contato.nome, email: contato.email, telefone: contato.telefone } })
+    const collection = db.collection('contatos');
+    await collection.updateOne( { _id: id} , { $set: {nome,  email, telefone } })
 };
 
 const deletar = async (contato) => {
+    const {id} = contato;
     const db = await conectarDb();
-    const collection = await db.collection('contatos');
-    collection.deleteOne({nome : contato.nome});
+    const collection = db.collection('contatos');
+    await collection.deleteOne({ _id: id});
 }
 
 const buscar = async (contato) => {
+    const {nome} = contato;
     const db = await conectarDb();
-    const collection = await db.collection('contatos');
-    let result = collection.findOne({nome: contato.nome});
-    contato.id = result._id;
-    contato.nome = result.nome;
-    contato.email = result.email;
-    contato.telefone = result.telefone;
+    const collection = db.collection('contatos');
+    let {_id, email, telefone} = await collection.findOne({nome});
+    return {id: _id, email, telefone};
 }
 
 module.exports = {Contato, inserir, alterar, deletar, buscar};

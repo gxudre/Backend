@@ -1,36 +1,45 @@
 const {Contato, inserir, alterar, deletar, buscar} = require("./modelo");
 
-const adicionarContato = (nome, email, telefone) => {
+const adicionarContato = async (nome, email, telefone) => {
     const contato = new Contato(nome, email, telefone);
-    inserir(contato)
+    const {id} = await inserir(contato);
+    contato.id = id;
+    return { ...contato};
 };
 
-const buscarContato = (nome) => {
+const buscarContato = async (nome) => {
     const contato = new Contato(nome);
-    return buscar();
+    const {id, email, telefone} = await buscar(contato);
+    contato.id = id;
+    contato.email = email;
+    contato.telefone = telefone;
+    return {...contato};
 };
 
-const atualizarContato = (nome, email, telefone) => {
-    const contato = buscarContato(nome);
+const atualizarContato = async (nome, email, telefone) => {
+    const contato = await buscarContato(nome);
     if (contato){
-        contato.nome = nome;
         contato.email = email;
         contato.telefone = telefone;
-        alterar(contato);
+        await alterar(contato);
         console.log('O contato foi alterado com sucesso');
+        
     }else{
         console.log('esse contato não existe');
     };
+
+    return {...contato};
 };
 
-const removerContato = (nome) => {
-    const contato = buscarContato(nome);
+const removerContato = async (nome) => {
+    const contato = await buscarContato(nome);
     if(contato){
-        deletar(contato);
+        await deletar(contato);
         console.log('contato deletado');
     }else{
         console.log('Não existe contato para deletar');
     }
+    return{...contato};
 };
 
 module.exports = {adicionarContato, buscarContato, atualizarContato, removerContato};
