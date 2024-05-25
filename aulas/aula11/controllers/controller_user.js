@@ -1,21 +1,43 @@
+const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 const Usuario = require('../models/model_users');
 
-const criar = async (req,res) => {
-    const novoUsuario = await Usuario.create(req.body);
-    res.status(201).json({id: novoUsuario._id.toString(), email: novoUsuario.email})
+const cifrarSenha = (senha, salto) => {
+    const hash = crypto.createHmac('sha256', salto);
+    hash.update(senha);
+    return hash.digest('hex');
 };
 
-const entrar = async (req,res) => {
-    const usuarioEncontrado = await Usuario.findOne({email: req.body.email});
-    if(usuarioEncontrado){
-        if(usuarioEncontrado.senha === req.body.senha){
-            res.json({token: '1234567890'});
-        }else{
-            res.status(401).json({msg: 'acesso negado!'});
+
+const criar = async (req, res) => {
+    const salto = crypto.randomBytes(16).toString('hex');
+    const senhaCifrada = cifrarSenha(req.body.senha, salto);
+
+    const novoUsuario = await Usuario.create({
+        email: req.body.email,
+        senha: senhaCifrada,
+        salto
+    });
+    res.status(201).json({
+        id: novoUsuario._id.toString(),
+        email: novoUsuario.email,
+        senha: novoUsuario.senha,
+        salto: novoUsuario.salto
+    });
+};
+
+const entrar = async (req, res) => {
+    const usuarioEncontrado = await Usuario.findOne({ email: req.body.email });
+    if (usuarioEncontrado) {
+        const senhaCifrada = cifrarSenha(req.body.senha, usuarioEncontrado.salto);
+        if (usuarioEncontrado.senha === senhaCifrada) {
+            res.json({ token: jwt.sign({email: usuarioEncontrado.email}, process.env.SEGREDO, {expiresIn: '1m'}) });
+        } else {
+            res.status(401).json({ msg: 'acesso negado!' });
         }
-    }else{
-        res.status(400).json({msg: 'credenciais inválidas!'});
+    } else {
+        res.status(400).json({ msg: 'credenciais inválidas!' });
     };
 };
 
-module.exports = {criar, entrar};
+module.exports = { criar, entrar };
